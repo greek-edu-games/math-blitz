@@ -1,0 +1,18 @@
+{
+  "name": "Αστραπή! — Νοεροί υπολογισμοί",
+  "short_name": "Αστραπή!",
+  "description": "Νοεροί υπολογισμοί σε 60 δευτερόλεπτα — ή μονομαχία στην ίδια οθόνη: ποιος θα απαντήσει πρώτος; Μαθηματικά Ε΄ Δημοτικού.",
+  "lang": "el",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b1030",
+  "theme_color": "#0b1030",
+  "categories": ["education", "games"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

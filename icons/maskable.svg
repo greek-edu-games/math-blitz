@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="20%" r="90%"><stop offset="0" stop-color="#3a2a9a"/><stop offset="1" stop-color="#0b1030"/></radialGradient>
+    <linearGradient id="bolt" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff3a0"/><stop offset="1" stop-color="#ffb703"/></linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <!-- safe zone: κεντρικό 60% -->
+  <path d="M286 130 L186 276 H246 L226 382 L338 236 H272 Z" fill="url(#bolt)" stroke="#b45309" stroke-width="10" stroke-linejoin="round"/>
+  <text x="340" y="170" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="64" font-weight="900" fill="#38e1ff">+</text>
+  <text x="170" y="378" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="64" font-weight="900" fill="#ff4f8b">×</text>
+</svg>

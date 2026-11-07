@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Αστραπή!</title>
+<meta name="theme-color" content="#0b1030">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Αστραπή!">
+<style>
+  :root{
+    --bg0:#0b1030; --bg1:#1a1150; --card:#ffffff14; --card2:#ffffff22; --ink:#f5f7ff; --dim:#aeb6e6;
+    --spark:#ffd23f; --cyan:#38e1ff; --pink:#ff4f8b; --good:#22c55e; --bad:#ef4444; --panel:#fff8dc; --panelInk:#241a05;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  [hidden]{display:none !important}
+  html,body{height:100%}
+  body{
+    font-family:Comfortaa,"Noto Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:radial-gradient(120% 70% at 50% 0%,var(--bg1) 0%,var(--bg0) 70%);
+    color:var(--ink); overflow:hidden; overscroll-behavior:none;
+    user-select:none; -webkit-user-select:none; -webkit-touch-callout:none;
+  }
+  button{touch-action:manipulation;font:inherit;color:inherit;cursor:pointer;border:0}
+  button:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
+  #app{position:fixed;inset:0}
+  @media (prefers-reduced-motion:reduce){ *{animation:none !important; transition:none !important} }
+
+  .screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+    overflow-y:auto;gap:12px;z-index:10;-webkit-overflow-scrolling:touch;
+    padding:calc(12px + env(safe-area-inset-top,0px)) calc(14px + env(safe-area-inset-right,0px)) calc(12px + env(safe-area-inset-bottom,0px)) calc(14px + env(safe-area-inset-left,0px));
+    opacity:0;pointer-events:none;transition:opacity .25s}
+  .screen::before,.screen::after{content:'';flex:none;margin:auto}
+  .screen.on{opacity:1;pointer-events:auto}
+  .wrap{width:100%;max-width:480px;display:flex;flex-direction:column;gap:12px;align-items:center}
+
+  h1{font-size:clamp(34px,10vw,48px);letter-spacing:.5px;color:var(--spark);text-shadow:0 0 18px #ffd23f88,0 3px 0 #b45309;font-weight:900;line-height:1.05}
+  .sub{color:var(--dim);font-size:14px;text-align:center;line-height:1.4}
+
+  .btn{min-height:48px;padding:12px 18px;border-radius:16px;background:var(--card2);font-weight:800;font-size:17px;box-shadow:0 3px 0 #0006;transition:transform .08s}
+  .btn:active{transform:translateY(2px);box-shadow:0 1px 0 #0006}
+  .btn.main{background:linear-gradient(180deg,#ffe066,#ffb703);color:#3b2600;box-shadow:0 4px 0 #b45309}
+  .btn.cy{background:linear-gradient(180deg,#67e8f9,#0ea5e9);color:#04283a;box-shadow:0 4px 0 #075985}
+  .btn.big{width:100%;font-size:19px;padding:14px 18px}
+  .iconbtn{min-width:44px;min-height:44px;border-radius:14px;background:var(--card);font-size:20px;display:grid;place-items:center}
+
+  .tiers{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%}
+  .tier{min-height:64px;border-radius:16px;background:var(--card);padding:8px 10px;text-align:left;border:2px solid transparent;display:flex;flex-direction:column;gap:2px}
+  .tier b{font-size:16px}
+  .tier small{color:var(--dim);font-size:12px;line-height:1.3}
+  .tier.sel{border-color:var(--spark);background:#ffd23f22;box-shadow:0 0 14px #ffd23f55}
+  .tier .st{color:var(--spark);letter-spacing:2px;font-size:14px}
+  .how{background:var(--card);border-radius:16px;padding:10px 14px;font-size:13px;line-height:1.5;color:var(--dim);width:100%}
+  .how b{color:var(--ink)}
+
+  .mascot svg{width:100%;height:100%;display:block;overflow:visible}
+  .mascot.glow svg{filter:drop-shadow(0 0 10px #ffd23f)}
+  .mascot .tail{animation:pulse 1.2s ease-in-out infinite;transform-origin:50% 50%}
+  @keyframes pulse{50%{opacity:.55}}
+  .bounce{animation:bounce .5s}
+  @keyframes bounce{30%{transform:translateY(-10px) scale(1.06)}}
+
+  /* Σπριντ */
+  .hud{width:100%;display:flex;align-items:center;gap:10px}
+  .clock{flex:1;height:26px;border-radius:13px;background:#ffffff1a;position:relative;overflow:hidden}
+  .clock i{position:absolute;inset:0 auto 0 0;width:66%;background:linear-gradient(90deg,#22d3ee,#ffd23f);border-radius:13px;transition:width .12s linear}
+  .clock.low i{background:linear-gradient(90deg,#ff4f8b,#ffd23f)}
+  .clock span{position:relative;display:block;text-align:center;font-weight:900;font-size:15px;line-height:26px;text-shadow:0 1px 2px #0008}
+  .score{font-weight:900;font-size:20px;color:var(--spark);min-width:62px;text-align:right}
+  .mrow{display:flex;align-items:center;gap:10px;width:100%;justify-content:center}
+  .mascot.sm{width:64px;height:64px}
+  .streak{font-weight:900;color:var(--spark);font-size:15px;min-width:96px}
+  .qcard{width:100%;background:var(--panel);color:var(--panelInk);border-radius:22px;padding:18px 10px;text-align:center;
+    font-weight:900;font-size:clamp(30px,10vw,46px);box-shadow:0 6px 0 #c9a227,0 0 28px #ffd23f33;min-height:96px;display:grid;place-items:center;line-height:1.15}
+  .qcard.small{font-size:clamp(24px,7.5vw,34px)}
+  .opts{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .opt{min-height:68px;border-radius:18px;background:var(--card2);font-weight:900;font-size:clamp(24px,7.5vw,32px);box-shadow:0 4px 0 #0007;transition:transform .08s,background .15s}
+  .opt:active{transform:translateY(2px)}
+  .opt.ok{background:var(--good);color:#04230f;animation:bounce .5s}
+  .opt.no{background:var(--bad);animation:shake .4s}
+  .opt.dim{opacity:.4}
+  @keyframes shake{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+  .explain{width:100%;min-height:62px;border-radius:14px;background:#00000040;padding:8px 12px;font-size:14px;line-height:1.45;color:var(--ink);display:flex;align-items:center;gap:8px}
+  .explain:empty::before{content:'Γρήγορα! Κάθε σωστή δίνει +3″ ⚡';color:var(--dim)}
+  .pop{position:fixed;pointer-events:none;font-weight:900;color:var(--spark);font-size:22px;text-shadow:0 0 10px #ffd23f;z-index:60;animation:rise .8s ease-out forwards}
+  @keyframes rise{from{opacity:1;transform:translateY(0) scale(1)}to{opacity:0;transform:translateY(-70px) scale(1.4)}}
+
+  /* Μονομαχία */
+  #sDuel{padding:0;gap:0;justify-content:stretch;overflow:hidden}
+  #sDuel::before,#sDuel::after{display:none}
+  .half{flex:1;min-height:0;width:100%;display:flex;flex-direction:column;gap:6px;align-items:center;justify-content:center;
+    padding:8px calc(12px + env(safe-area-inset-right,0px)) 8px calc(12px + env(safe-area-inset-left,0px));position:relative}
+  .half.flip{transform:rotate(180deg);padding-top:calc(8px + env(safe-area-inset-bottom,0px))}
+  .half.p1{padding-bottom:calc(8px + env(safe-area-inset-bottom,0px));background:linear-gradient(0deg,#0e7490 -80%,transparent 70%)}
+  .half.p2{background:linear-gradient(0deg,#be185d -80%,transparent 70%)}
+  .half.flip.p2{background:linear-gradient(180deg,#0000 30%,#be185d44)}
+  .half.p1:not(.flip){background:linear-gradient(0deg,#0e749044,#0000 70%)}
+  .hhead{width:100%;max-width:440px;display:flex;align-items:center;gap:8px;font-weight:900;font-size:15px}
+  .hhead .bar{flex:1;height:12px;border-radius:6px;background:#ffffff22;overflow:hidden}
+  .hhead .bar i{display:block;height:100%;width:0;border-radius:6px;transition:width .3s}
+  .p1 .bar i{background:var(--cyan)} .p2 .bar i{background:var(--pink)}
+  .hhead .n{min-width:52px;text-align:right;color:var(--spark)}
+  .half .qcard{max-width:440px;min-height:0;padding:10px 8px;font-size:clamp(26px,8vw,38px);box-shadow:0 4px 0 #c9a227}
+  .half .qcard.small{font-size:clamp(20px,6vw,28px)}
+  .half .opts{max-width:440px;gap:8px}
+  .half .opt{min-height:52px;font-size:clamp(22px,6.5vw,28px)}
+  .hmsg{width:100%;max-width:440px;min-height:40px;font-size:13px;line-height:1.35;text-align:center;color:var(--ink);display:grid;place-items:center}
+  .mid{flex:none;width:100%;min-height:52px;background:#000000aa;display:flex;align-items:center;justify-content:center;gap:10px;padding:4px 12px;
+    padding-left:calc(12px + env(safe-area-inset-left,0px));padding-right:calc(12px + env(safe-area-inset-right,0px));z-index:5;border-top:2px solid #ffd23f55;border-bottom:2px solid #ffd23f55}
+  .mid .mtxt{color:var(--dim);font-size:13px;font-weight:700;flex:1;text-align:center}
+  .hover{position:absolute;inset:0;background:#0b1030e6;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;z-index:4;text-align:center;padding:12px}
+  .hover b{font-size:clamp(26px,8vw,36px);color:var(--spark)}
+  .hover span{color:var(--dim);font-size:15px}
+
+  /* Αποτελέσματα & παύση */
+  .veil{background:rgba(6,8,30,.86);z-index:30}
+  .rcard{width:100%;max-width:420px;background:var(--card);border-radius:22px;padding:18px;display:flex;flex-direction:column;gap:10px;align-items:center;text-align:center}
+  .big{font-size:56px;font-weight:900;color:var(--spark);line-height:1;text-shadow:0 0 16px #ffd23f66}
+  .stars{font-size:38px;letter-spacing:6px;color:var(--spark)}
+  .stats{display:flex;gap:18px;justify-content:center;font-size:15px;color:var(--dim)}
+  .stats b{display:block;color:var(--ink);font-size:22px}
+  .newrec{color:#04230f;background:var(--good);border-radius:12px;padding:4px 12px;font-weight:900;font-size:14px}
+  .rbtns{display:flex;flex-direction:column;gap:10px;width:100%}
+  #pause{z-index:50}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- Τίτλος -->
+  <section id="sTitle" class="screen on">
+    <div class="wrap">
+      <div class="mascot" id="mTitle" style="width:120px;height:120px"></div>
+      <h1>Αστραπή!</h1>
+      <p class="sub">Νοεροί υπολογισμοί με ταχύτητα φωτός.<br>Διάλεξε επίπεδο και μπες στη δράση!</p>
+      <div class="tiers" id="tiers" role="radiogroup" aria-label="Επίπεδο"></div>
+      <button class="btn main big" id="bSprint">⏱ Σπριντ 60″ (μόνος)</button>
+      <button class="btn cy big" id="bDuel">⚔️ Μονομαχία (δύο παίκτες)</button>
+      <div class="how">
+        <b>Σπριντ:</b> όσο πιο πολλές σωστές μέσα σε 60″ — κάθε σωστή <b>+3″</b>. Το επίπεδο ανεβαίνει όσο προχωράς.<br>
+        <b>Μονομαχία:</b> ακουμπήστε το κινητό ανάμεσά σας. Ίδια ερώτηση· ο πρώτος που πατά σωστά παίρνει τον πόντο, ένα λάθος σε κλειδώνει. Πρώτος στους 10!
+      </div>
+      <button class="iconbtn" id="bMute" aria-label="Ήχος">🔊</button>
+    </div>
+  </section>
+
+  <!-- Σπριντ -->
+  <section id="sSprint" class="screen">
+    <div class="wrap">
+      <div class="hud">
+        <button class="iconbtn" id="sQuit" aria-label="Έξοδος">✕</button>
+        <div class="clock" id="sClock"><i></i><span>60″</span></div>
+        <div class="score" id="sScore">0</div>
+      </div>
+      <div class="mrow">
+        <div class="mascot sm" id="mSprint"></div>
+        <div class="streak" id="sStreak"></div>
+      </div>
+      <div class="qcard" id="sQ">–</div>
+      <div class="opts" id="sOpts"></div>
+      <div class="explain" id="sExplain" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <!-- Μονομαχία -->
+  <section id="sDuel" class="screen">
+    <div class="half p2 flip" id="h1">
+      <div class="hhead"><span>🩷 Παίκτης 2</span><div class="bar"><i></i></div><span class="n">0/10</span></div>
+      <div class="qcard"></div>
+      <div class="opts"></div>
+      <div class="hmsg"></div>
+      <div class="hover" hidden></div>
+    </div>
+    <div class="mid">
+      <button class="iconbtn" id="dQuit" aria-label="Έξοδος">✕</button>
+      <div class="mtxt" id="dMid">Πρώτος στους 10 πόντους</div>
+      <div id="dEndBtns" style="display:flex;gap:8px" hidden>
+        <button class="btn main" id="dRematch">Ρεβάνς!</button>
+        <button class="btn" id="dHome">Αρχική</button>
+      </div>
+    </div>
+    <div class="half p1" id="h0">
+      <div class="hhead"><span>💙 Παίκτης 1</span><div class="bar"><i></i></div><span class="n">0/10</span></div>
+      <div class="qcard"></div>
+      <div class="opts"></div>
+      <div class="hmsg"></div>
+      <div class="hover" hidden></div>
+    </div>
+  </section>
+
+  <!-- Αποτελέσματα σπριντ -->
+  <section id="sResult" class="screen veil">
+    <div class="wrap">
+      <div class="mascot" id="mRes" style="width:110px;height:110px"></div>
+      <div class="rcard">
+        <div class="sub" id="rTitle">Τέλος χρόνου!</div>
+        <div class="big" id="rScore">0</div>
+        <div class="stars" id="rStars">☆☆☆</div>
+        <div class="stats"><div><b id="rOk">0</b>σωστές</div><div><b id="rBad">0</b>λάθη</div><div><b id="rBest">0</b>ρεκόρ</div></div>
+        <div class="newrec" id="rNew" hidden>🏆 Νέο ρεκόρ!</div>
+        <div class="sub" id="rTier"></div>
+      </div>
+      <div class="rbtns">
+        <button class="btn main big" id="rAgain">⚡ Ξανά!</button>
+        <button class="btn big" id="rHome">Αρχική</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Παύση -->
+  <section id="pause" class="screen veil">
+    <div class="wrap">
+      <h1>Παύση</h1>
+      <button class="btn main big" id="bResume">▶ Συνέχεια</button>
+    </div>
+  </section>
+</div>
+
+<script id="logic">
+/* Καθαρή λογική: γεννήτριες ερωτήσεων, επίπεδα, βαθμολογία, μονομαχία.
+   Χωρίς DOM — δοκιμάζεται από το test.mjs. */
+(function (root) {
+  var rng = Math.random;
+  function setRng(f) { rng = f || Math.random; }
+  function ri(a, b) { return a + Math.floor(rng() * (b - a + 1)); }
+  function pick(a) { return a[Math.floor(rng() * a.length)]; }
+  function shuffle(a) {
+    a = a.slice();
+    for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(rng() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; }
+    return a;
+  }
+  function rnd(x) { return Math.round(x * 1000) / 1000; }
+
+  var TIERS = [
+    { id: 1, name: 'Χάλκινο', emoji: '🥉', desc: 'Πρόσθεση & αφαίρεση ως το 100' },
+    { id: 2, name: 'Ασημένιο', emoji: '🥈', desc: 'Προπαίδεια, διαιρέσεις, στρογγυλοί ως το 1000' },
+    { id: 3, name: 'Χρυσό', emoji: '🥇', desc: 'Προτεραιότητα, ×10/×100, συμπλήρωμα στο 1000' },
+    { id: 4, name: 'Αστραπή', emoji: '⚡', desc: 'Δεκαδικοί, ποσοστά, μικτά' }
+  ];
+
+  /* Μορφοποίηση αριθμού (ελληνικά): υποδιαστολή «,» και τελεία χιλιάδων από 1.000 */
+  function fmt(n) {
+    n = rnd(n);
+    var s = String(n), neg = s.charAt(0) === '-'; if (neg) s = s.slice(1);
+    var p = s.split('.'), ip = p[0];
+    if (ip.length > 3) ip = ip.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    return (neg ? '−' : '') + ip + (p[1] ? ',' + p[1] : '');
+  }
+  /* js (π.χ. "3+4*5") -> εμφάνιση "3 + 4 × 5" */
+  function show(js) {
+    return js.replace(/\d+(\.\d+)?/g, function (m) { return fmt(parseFloat(m)); })
+      .replace(/\*/g, ' × ').replace(/\//g, ' ÷ ').replace(/\+/g, ' + ').replace(/-/g, ' − ')
+      .replace(/\( /g, '(').replace(/ \)/g, ')').replace(/\s+/g, ' ').trim();
+  }
+  function key(x) { return String(rnd(x)); }
+
+  /* Χτίζει ερώτηση: ans σωστή, cands = πιθανά λάθη κατά σειρά πιθανότητας */
+  function build(tier, kind, js, ans, cands, explain, o) {
+    o = o || {};
+    ans = rnd(ans);
+    var dec = !!o.dec;
+    var seen = {}; seen[key(ans)] = 1;
+    var wrong = [];
+    function add(x) {
+      x = rnd(x);
+      if (wrong.length >= 3) return false;
+      if (!isFinite(x) || x < 0 || (!dec && x !== Math.floor(x)) || seen[key(x)]) return false;
+      seen[key(x)] = 1; wrong.push(x); return true;
+    }
+    var trapOk = false;
+    cands.forEach(function (c, i) { var r = add(c); if (i === 0 && o.trap) trapOk = r; });
+    var step = dec ? 0.1 : (ans >= 100 ? 10 : 1);
+    var tries = 0;
+    while (wrong.length < 3 && tries++ < 60) add(ans + (rng() < 0.5 ? -1 : 1) * step * ri(1, 5));
+    var j = 1;
+    while (wrong.length < 3) { add(ans + step * j); j++; }
+    var opts = shuffle([ans].concat(wrong));
+    return {
+      tier: tier, kind: kind, js: js, expr: o.expr || show(js), ans: ans, opts: opts,
+      labels: opts.map(fmt), correct: opts.indexOf(ans), explain: explain,
+      trap: trapOk ? rnd(cands[0]) : null, dec: dec
+    };
+  }
+
+  var G = {};
+
+  /* ---- Χάλκινο ---- */
+  G.add100 = function () {
+    var a = ri(11, 88), b = ri(5, 100 - a), ans = a + b, t = Math.floor(b / 10) * 10, u = b % 10;
+    var ex = t && u ? a + ' + ' + t + ' = ' + (a + t) + ', και ' + u + ' ακόμα: ' + ans : a + ' + ' + b + ' = ' + ans;
+    return build(1, 'add', a + '+' + b, ans, [ans + 10, ans - 10, ans + 1, ans - 1], ex);
+  };
+  G.sub100 = function () {
+    var a = ri(25, 99), b = ri(5, a - 3), ans = a - b, t = Math.floor(b / 10) * 10, u = b % 10;
+    var ex = t && u ? a + ' − ' + t + ' = ' + (a - t) + ', και −' + u + ': ' + ans : a + ' − ' + b + ' = ' + ans;
+    return build(1, 'sub', a + '-' + b, ans, [ans + 10, ans - 10, ans + 1, ans - 1], ex);
+  };
+  G.comp100 = function () {
+    var a = ri(3, 97), ans = 100 - a;
+    return build(1, 'comp', '100-' + a, ans, [ans + 10, ans - 10, ans + 1, ans - 1],
+      'Συμπλήρωμα στο 100: ' + a + ' + ' + ans + ' = 100');
+  };
+
+  /* ---- Ασημένιο ---- */
+  G.mult = function () {
+    var a = ri(2, 12), b = ri(2, 12), ans = a * b;
+    var near = [a * (b + 1), a * (b - 1), (a + 1) * b, (a - 1) * b];
+    var ex = a + ' × ' + b + ' = ' + ans + '. Βοήθεια: ' + a + ' × ' + (b - 1) + ' = ' + (a * (b - 1)) + ' και +' + a;
+    return build(2, 'mult', a + '*' + b, ans, shuffle(near).concat([ans + 10, ans - 10]), ex);
+  };
+  G.div = function () {
+    var q = ri(2, 12), d = ri(2, 12), a = q * d;
+    return build(2, 'div', a + '/' + d, q, [q + 1, q - 1, d, q + 2],
+      'Πόσες φορές χωράει το ' + d + ' στο ' + a + '; ' + q + ' × ' + d + ' = ' + a);
+  };
+  G.round1000 = function () {
+    var plus = rng() < 0.5, a, b, ans, js, ex;
+    if (plus) { a = ri(10, 90) * 10; b = ri(10, Math.floor((1000 - a) / 10)) * 10; ans = a + b; js = a + '+' + b;
+      ex = 'Δεκάδες: ' + (a / 10) + ' + ' + (b / 10) + ' = ' + (ans / 10) + ' δεκάδες = ' + ans; }
+    else { a = ri(20, 100) * 10; b = ri(10, a / 10 - 5) * 10; ans = a - b; js = a + '-' + b;
+      ex = 'Δεκάδες: ' + (a / 10) + ' − ' + (b / 10) + ' = ' + (ans / 10) + ' δεκάδες = ' + ans; }
+    return build(2, 'round', js, ans, [ans + 100, ans - 100, ans + 10, ans - 10], ex);
+  };
+
+  /* ---- Χρυσό ---- */
+  G.prio = function () {
+    var a, b, c, ans, js, trap, ex;
+    if (rng() < 0.6) {
+      a = ri(2, 30); b = ri(2, 9); c = ri(2, 9); ans = a + b * c; trap = (a + b) * c; js = a + '+' + b + '*' + c;
+      ex = 'Πρώτα ο πολλαπλασιασμός: ' + b + ' × ' + c + ' = ' + (b * c) + ', μετά + ' + a + ' = ' + ans;
+    } else {
+      b = ri(2, 9); c = ri(2, 9); a = b * c + ri(5, 40); ans = a - b * c; trap = (a - b) * c; js = a + '-' + b + '*' + c;
+      ex = 'Πρώτα ο πολλαπλασιασμός: ' + b + ' × ' + c + ' = ' + (b * c) + ', μετά ' + a + ' − ' + (b * c) + ' = ' + ans;
+    }
+    return build(3, 'prio', js, ans, [trap, ans + 10, ans - 10, ans + 1], ex, { trap: true });
+  };
+  G.paren = function () {
+    var c = ri(2, 9), q = ri(2, 12), m = c * ri(1, 8), b = m, a = b + c * q, ans = q;
+    var trap = a - b / c;
+    if (rng() < 0.5) {
+      return build(3, 'paren', '(' + a + '-' + b + ')/' + c, ans, [trap, ans + 1, ans - 1, ans * c],
+        'Πρώτα η παρένθεση: ' + a + ' − ' + b + ' = ' + (a - b) + ', μετά ' + (a - b) + ' ÷ ' + c + ' = ' + ans);
+    }
+    var x = ri(2, 15), y = ri(2, 15), z = ri(2, 6), ans2 = (x + y) * z;
+    return build(3, 'paren', '(' + x + '+' + y + ')*' + z, ans2, [x + y * z, ans2 + z, ans2 - z, ans2 + 10],
+      'Πρώτα η παρένθεση: ' + x + ' + ' + y + ' = ' + (x + y) + ', μετά ' + (x + y) + ' × ' + z + ' = ' + ans2);
+  };
+  G.pow10 = function () {
+    var r = rng(), n, ans, js, ex;
+    if (r < 0.35) { n = ri(12, 99); ans = n * 10; js = n + '*10'; ex = '× 10: κάθε ψηφίο πάει μία θέση αριστερά (' + n + ' → ' + ans + ')'; }
+    else if (r < 0.7) { n = ri(12, 99); ans = n * 100; js = n + '*100'; ex = '× 100: πρόσθεσε δύο μηδενικά (' + n + ' → ' + fmt(ans) + ')'; }
+    else if (r < 0.85) { n = ri(12, 99) * 10; ans = n / 10; js = n + '/10'; ex = '÷ 10: κάθε ψηφίο πάει μία θέση δεξιά (' + n + ' → ' + ans + ')'; }
+    else { n = ri(12, 99) * 100; ans = n / 100; js = n + '/100'; ex = '÷ 100: κόψε δύο μηδενικά (' + fmt(n) + ' → ' + ans + ')'; }
+    return build(3, 'pow10', js, ans, [ans * 10, ans / 10, ans * 100, ans / 100], ex);
+  };
+  G.comp1000 = function () {
+    var x, ans;
+    do { x = ri(101, 989); } while (x % 10 === 0);
+    ans = 1000 - x;
+    return build(3, 'comp1000', '1000-' + x, ans, [ans + 10, ans - 10, ans + 100, ans - 100],
+      'Συμπλήρωμα στο 1000: ' + x + ' + ' + ans + ' = 1.000 (εκατοντάδες και δεκάδες ως το 9, μονάδες ως το 10)');
+  };
+
+  /* ---- Αστραπή: δεκαδικοί, ποσοστά, μικτά ---- */
+  G.decAdd = function () {
+    var plus = rng() < 0.55, a, b, ans, js, ex;
+    if (rng() < 0.4) { // τέταρτα και μισά
+      var q = [0.25, 0.5, 0.75, 1.25, 1.5, 2.25, 2.5];
+      a = pick(q); b = pick([0.25, 0.5, 0.75]);
+    } else { a = ri(11, 49) / 10; b = ri(2, 19) / 10; }
+    if (plus) { ans = a + b; js = a + '+' + b; ex = fmt(a) + ' + ' + fmt(b) + ' = ' + fmt(ans) + ' (στοίχισε τις υποδιαστολές)'; }
+    else { if (b > a) { var t = a; a = b; b = t; } ans = a - b; js = a + '-' + b; ex = fmt(a) + ' − ' + fmt(b) + ' = ' + fmt(ans) + ' (στοίχισε τις υποδιαστολές)'; }
+    ans = rnd(ans);
+    return build(4, 'decAdd', js, ans, [ans + 0.1, ans - 0.1, ans * 10, ans / 10, ans + 1, ans - 1], ex, { dec: true });
+  };
+  G.decMul = function () {
+    var r = rng(), n, ans, js, ex;
+    if (r < 0.4) { n = ri(2, 99) / 10; var k = pick([10, 100]); ans = n * k; js = n + '*' + k; ex = '× ' + k + ': η υποδιαστολή πάει ' + (k === 10 ? 'μία' : 'δύο') + ' θέση δεξιά (' + fmt(n) + ' → ' + fmt(ans) + ')'; }
+    else if (r < 0.7) { n = ri(2, 99); var k2 = pick([10, 100]); ans = n / k2; js = n + '/' + k2; ex = '÷ ' + k2 + ': η υποδιαστολή πάει ' + (k2 === 10 ? 'μία' : 'δύο') + ' θέση αριστερά (' + n + ' → ' + fmt(ans) + ')'; }
+    else { var d = ri(1, 9) / 10, m = ri(2, 9); ans = d * m; js = d + '*' + m; n = d;
+      ex = fmt(d) + ' × ' + m + ': ' + (d * 10) + ' × ' + m + ' = ' + (d * 10 * m) + ' δέκατα = ' + fmt(ans); }
+    ans = rnd(ans);
+    return build(4, 'decMul', js, ans, [ans * 10, ans / 10, ans + 1, ans - 1, ans * 100], ex, { dec: true });
+  };
+  G.percent = function () {
+    var p = pick([10, 10, 25, 50, 50]), base, ex;
+    if (p === 10) { base = ri(2, 40) * 10; ex = '10% = το ένα δέκατο: ' + fmt(base) + ' ÷ 10'; }
+    else if (p === 25) { base = ri(1, 25) * 20; ex = '25% = το ένα τέταρτο: ' + fmt(base) + ' ÷ 4'; }
+    else { base = ri(1, 50) * 10; ex = '50% = το μισό: ' + fmt(base) + ' ÷ 2'; }
+    var ans = base * p / 100;
+    return build(4, 'percent', base + '*' + p + '/100', ans, [ans * 2, ans / 2, ans * 10, ans / 10, base - ans],
+      ex + ' = ' + fmt(ans), { expr: 'Το ' + p + '% του ' + fmt(base) });
+  };
+  G.mixed = function () {
+    var r = rng();
+    if (r < 0.4) {
+      var d = ri(1, 9) / 10, c = pick([2, 5, 10]), a = ri(1, 9), ans = a + d * c;
+      return build(4, 'mixed', a + '+' + d + '*' + c, ans, [(a + d) * c, ans + 0.1, ans - 0.1, ans + 1], 'Πρώτα ο πολλαπλασιασμός: ' + fmt(d) + ' × ' + c + ' = ' + fmt(d * c) + ', μετά + ' + a + ' = ' + fmt(ans), { dec: true, trap: true });
+    }
+    if (r < 0.7) {
+      var p = pick([10, 25, 50]), base = p === 25 ? ri(1, 10) * 20 : ri(1, 20) * 10, add = ri(2, 30), part = base * p / 100, ans2 = part + add;
+      return build(4, 'mixed', base + '*' + p + '/100+' + add, ans2, [(base + add) * p / 100, ans2 + 10, ans2 - 10, part, ans2 + 1],
+        'Πρώτα το ' + p + '% του ' + fmt(base) + ' = ' + fmt(part) + ', μετά + ' + add + ' = ' + fmt(ans2), { expr: 'Το ' + p + '% του ' + fmt(base) + ' + ' + add });
+    }
+    var h = pick([0.5, 0.25, 1.5]), m = ri(2, 9) * 2, s = ri(1, 9), ans3 = h * m + s;
+    if (rng() < 0.5) { ans3 = h * m - s; if (ans3 < 0) { ans3 = h * m + s; return build(4, 'mixed', h + '*' + m + '+' + s, ans3, [(h * m) * s, ans3 + 1, ans3 - 1, ans3 + 0.5], fmt(h) + ' × ' + m + ' = ' + fmt(h * m) + ', μετά + ' + s + ' = ' + fmt(ans3), { dec: true }); }
+      return build(4, 'mixed', h + '*' + m + '-' + s, ans3, [h * (m - s), ans3 + 1, ans3 - 1, ans3 + 0.5], fmt(h) + ' × ' + m + ' = ' + fmt(h * m) + ', μετά − ' + s + ' = ' + fmt(ans3), { dec: true }); }
+    return build(4, 'mixed', h + '*' + m + '+' + s, ans3, [h * (m + s), ans3 + 1, ans3 - 1, ans3 + 0.5], fmt(h) + ' × ' + m + ' = ' + fmt(h * m) + ', μετά + ' + s + ' = ' + fmt(ans3), { dec: true });
+  };
+
+  var POOL = {
+    1: [G.add100, G.add100, G.sub100, G.sub100, G.comp100],
+    2: [G.mult, G.mult, G.mult, G.div, G.div, G.round1000],
+    3: [G.prio, G.prio, G.paren, G.paren, G.pow10, G.comp1000],
+    4: [G.decAdd, G.decMul, G.percent, G.percent, G.mixed, G.mixed]
+  };
+
+  function genQuestion(tier, lastExpr) {
+    tier = Math.max(1, Math.min(4, tier | 0));
+    var q, n = 0;
+    do { q = pick(POOL[tier])(); } while (q.expr === lastExpr && ++n < 8);
+    return q;
+  }
+
+  /* Σπριντ: ανεβαίνει επίπεδο κάθε 6 σωστές, ως το 4ο */
+  function sprintTier(base, correct) { return Math.min(4, base + Math.floor(correct / 6)); }
+  var SPRINT = { start: 60, bonus: 3, cap: 90 };
+  function scoreFor(streak) { return 10 + (streak >= 3 ? 5 : 0); }
+  function starsFor(correct, errors) {
+    if (correct >= 15 && errors === 0) return 3;
+    if (correct >= 10 && errors <= 2) return 2;
+    if (correct >= 10) return 1;
+    return 0;
+  }
+
+  /* Μονομαχία: μηχανή καταστάσεων */
+  function duelNew(target) {
+    return { target: target || 10, scores: [0, 0], locked: [false, false], resolved: false, winner: null, over: false, item: 0, pointBy: null };
+  }
+  function duelTap(s, p, isCorrect) {
+    if (s.over || s.resolved || s.locked[p]) return 'ignored';
+    if (isCorrect) {
+      s.scores[p]++; s.resolved = true; s.pointBy = p;
+      if (s.scores[p] >= s.target) { s.over = true; s.winner = p; }
+      return 'point';
+    }
+    s.locked[p] = true;
+    if (s.locked[0] && s.locked[1]) { s.resolved = true; return 'both-wrong'; }
+    return 'locked';
+  }
+  function duelNext(s) {
+    if (s.over) return false;
+    s.locked = [false, false]; s.resolved = false; s.pointBy = null; s.item++;
+    return true;
+  }
+
+  var API = { TIERS: TIERS, genQuestion: genQuestion, sprintTier: sprintTier, SPRINT: SPRINT, scoreFor: scoreFor, starsFor: starsFor,
+    duelNew: duelNew, duelTap: duelTap, duelNext: duelNext, fmt: fmt, setRng: setRng, generators: G };
+  if (typeof module !== 'undefined' && module.exports) module.exports = API;
+  else root.BLITZ = API;
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+
+<script>
+(function () {
+  'use strict';
+  var B = window.BLITZ;
+  var $ = function (id) { return document.getElementById(id); };
+  var NS = 'blitz.';
+
+  /* ---------- αποθήκευση ---------- */
+  function load(k, d) { try { var v = localStorage.getItem(NS + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }
+  function save(k, v) { try { localStorage.setItem(NS + k, JSON.stringify(v)); } catch (e) {} }
+  var records = load('records', {}), stars = load('stars', {}), soundOn = load('sound', true);
+  var tier = 1;
+
+  /* ---------- ήχος ---------- */
+  var ac = null;
+  function tone(f, t0, dur, type, vol) {
+    if (!soundOn) return;
+    try {
+      ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+      if (ac.state === 'suspended') ac.resume();
+      var o = ac.createOscillator(), g = ac.createGain(), t = ac.currentTime + t0;
+      o.type = type || 'sine'; o.frequency.setValueAtTime(f, t);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol || 0.15, t + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + dur + 0.02);
+    } catch (e) {}
+  }
+  var sfx = {
+    tick: function () { tone(660, 0, 0.06, 'triangle', 0.12); },
+    ok: function () { tone(784, 0, 0.1, 'triangle'); tone(1047, 0.07, 0.12, 'triangle'); },
+    streak: function (n) { var b = 523 * Math.pow(1.122, Math.min(n, 8)); [0, 4, 7, 12].forEach(function (s, i) { tone(b * Math.pow(2, s / 12), i * 0.06, 0.14, 'square', 0.08); }); },
+    bad: function () { tone(160, 0, 0.28, 'sawtooth', 0.14); tone(120, 0.1, 0.28, 'sawtooth', 0.12); },
+    win: function () { [523, 659, 784, 1047, 1319].forEach(function (f, i) { tone(f, i * 0.09, 0.2, 'triangle', 0.14); }); },
+    lose: function () { [392, 330, 262].forEach(function (f, i) { tone(f, i * 0.14, 0.25, 'triangle', 0.12); }); }
+  };
+  function setSoundUI() { $('bMute').textContent = soundOn ? '🔊' : '🔇'; $('bMute').setAttribute('aria-pressed', String(!soundOn)); }
+
+  /* ---------- Σπίθας ---------- */
+  function mascotSVG(pose) {
+    var eyes, mouth, extra = '';
+    if (pose === 'cheer') {
+      eyes = '<path d="M36 42 q5 -8 10 0 M54 42 q5 -8 10 0" fill="none" stroke="#241a05" stroke-width="3.5" stroke-linecap="round"/>';
+      mouth = '<path d="M40 52 q10 14 20 0 Z" fill="#7c2d12" stroke="#241a05" stroke-width="2.5" stroke-linejoin="round"/>';
+      extra = '<path d="M14 20 l4 8 M86 20 l-4 8 M8 40 l8 2 M92 40 l-8 2" stroke="#ffd23f" stroke-width="4" stroke-linecap="round"/>';
+    } else if (pose === 'dizzy') {
+      eyes = '<path d="M34 38 l10 10 M44 38 l-10 10 M56 38 l10 10 M66 38 l-10 10" stroke="#241a05" stroke-width="3.5" stroke-linecap="round"/>';
+      mouth = '<path d="M40 56 q5 -5 10 0 t10 0" fill="none" stroke="#241a05" stroke-width="3" stroke-linecap="round"/>';
+      extra = '<text x="22" y="22" font-size="14" fill="#ffd23f">★</text><text x="70" y="18" font-size="12" fill="#38e1ff">★</text>';
+    } else {
+      eyes = '<circle cx="41" cy="43" r="6.5" fill="#fff"/><circle cx="59" cy="43" r="6.5" fill="#fff"/><circle cx="42.5" cy="44" r="3.2" fill="#241a05"/><circle cx="60.5" cy="44" r="3.2" fill="#241a05"/>';
+      mouth = '<path d="M43 54 q7 6 14 0" fill="none" stroke="#241a05" stroke-width="3" stroke-linecap="round"/>';
+    }
+    return '<svg viewBox="0 0 100 100" aria-hidden="true">' +
+      '<path d="M50 38 C20 44 12 82 50 90 C88 82 80 44 50 38Z" fill="#3b3a63" stroke="#241a05" stroke-width="3"/>' +
+      '<ellipse class="tail" cx="50" cy="84" rx="17" ry="12" fill="#ffd23f" stroke="#b45309" stroke-width="3"/>' +
+      '<path d="M50 62 V80" stroke="#241a05" stroke-width="3" opacity=".35"/>' +
+      '<path d="M38 22 q-8 -14 -16 -14 M62 22 q8 -14 16 -14" fill="none" stroke="#241a05" stroke-width="3.5" stroke-linecap="round"/>' +
+      '<circle cx="22" cy="8" r="3.5" fill="#ffd23f"/><circle cx="78" cy="8" r="3.5" fill="#ffd23f"/>' +
+      '<circle cx="50" cy="46" r="26" fill="#ffb86b" stroke="#241a05" stroke-width="3"/>' +
+      '<path d="M22 40 C22 12 78 12 78 40 Z" fill="#ef4444" stroke="#241a05" stroke-width="3" stroke-linejoin="round"/>' +
+      '<path d="M53 14 L43 30 H50 L46 40 L58 24 H51 Z" fill="#ffd23f" stroke="#b45309" stroke-width="1.5" stroke-linejoin="round"/>' +
+      '<rect x="18" y="37" width="64" height="6" rx="3" fill="#b91c1c" stroke="#241a05" stroke-width="2"/>' +
+      eyes + mouth + extra + '</svg>';
+  }
+  var poseT = {};
+  function setPose(id, pose, glow, back) {
+    var el = $(id); el.innerHTML = mascotSVG(pose); el.classList.toggle('glow', !!glow);
+    clearTimeout(poseT[id]);
+    if (pose !== 'idle' && back !== false) poseT[id] = setTimeout(function () { setPose(id, 'idle', glow, false); }, 1000);
+  }
+
+  /* ---------- οθόνες & παύση ---------- */
+  var mode = null;   // 'sprint' | 'duel' | null
+  var paused = false;
+  function showScreen(id) {
+    ['sTitle', 'sSprint', 'sDuel', 'sResult'].forEach(function (s) { $(s).classList.toggle('on', s === id); });
+    $('pause').classList.remove('on'); paused = false;
+  }
+  function pauseGame() { if (!mode || paused) return; paused = true; $('pause').classList.add('on'); }
+  function resumeGame() { paused = false; $('pause').classList.remove('on'); last = performance.now(); }
+  document.addEventListener('visibilitychange', function () { if (document.hidden) pauseGame(); });
+  window.addEventListener('blur', function () { /* μόνο visibilitychange παύει — το blur είναι πολύ ευαίσθητο */ });
+  $('bResume').onclick = resumeGame;
+
+  /* ---------- τίτλος ---------- */
+  function stars3(n) { return '★★★'.slice(0, n) + '☆☆☆'.slice(0, 3 - n); }
+  function renderTiers() {
+    var box = $('tiers'); box.innerHTML = '';
+    B.TIERS.forEach(function (t) {
+      var b = document.createElement('button');
+      b.className = 'tier' + (t.id === tier ? ' sel' : ''); b.setAttribute('role', 'radio'); b.setAttribute('aria-checked', String(t.id === tier));
+      b.innerHTML = '<b>' + t.emoji + ' ' + t.name + '</b><span class="st">' + stars3(stars[t.id] || 0) + '</span><small>' + t.desc + ' · ρεκόρ ' + (records[t.id] || 0) + '</small>';
+      b.onclick = function () { tier = t.id; save('tier', tier); sfx.tick(); renderTiers(); };
+      box.appendChild(b);
+    });
+  }
+  function toTitle() { mode = null; renderTiers(); showScreen('sTitle'); setPose('mTitle', 'idle'); }
+  $('bMute').onclick = function () { soundOn = !soundOn; save('sound', soundOn); setSoundUI(); sfx.tick(); };
+  $('bSprint').onclick = function () { sfx.tick(); startSprint(); };
+  $('bDuel').onclick = function () { sfx.tick(); startDuel(); };
+  $('sQuit').onclick = toTitle; $('dQuit').onclick = toTitle; $('dHome').onclick = toTitle; $('rHome').onclick = toTitle;
+  $('rAgain').onclick = startSprint; $('dRematch').onclick = startDuel;
+
+  /* ---------- κύριο ρολόι ---------- */
+  var last = performance.now();
+  setInterval(function () {
+    var now = performance.now(), dt = Math.min(0.25, (now - last) / 1000); last = now;
+    if (!mode || paused || document.hidden) return;
+    if (mode === 'sprint') sprintTick(dt); else duelTick(dt);
+  }, 100);
+
+  function pop(text, el) {
+    var r = (el || $('sQ')).getBoundingClientRect(), p = document.createElement('div');
+    p.className = 'pop'; p.textContent = text; p.style.left = (r.left + r.width / 2 - 20) + 'px'; p.style.top = (r.top + r.height / 2) + 'px';
+    document.body.appendChild(p); setTimeout(function () { p.remove(); }, 850);
+  }
+
+  /* ---------- Σπριντ ---------- */
+  var S = null;
+  function startSprint() {
+    S = { time: B.SPRINT.start, correct: 0, errors: 0, score: 0, streak: 0, q: null, locked: false, adv: 0, lastExpr: '' };
+    mode = 'sprint'; showScreen('sSprint'); $('sExplain').textContent = '';
+    var box = $('sOpts'); box.innerHTML = '';
+    for (var i = 0; i < 4; i++) (function (i) {
+      var b = document.createElement('button'); b.className = 'opt';
+      b.onclick = function () { sprintAnswer(i); }; box.appendChild(b);
+    })(i);
+    setPose('mSprint', 'idle'); nextSprintQ(); renderSprintHud();
+  }
+  function curTier() { return B.sprintTier(tier, S.correct); }
+  function nextSprintQ() {
+    S.q = B.genQuestion(curTier(), S.lastExpr); S.lastExpr = S.q.expr; S.locked = false; S.adv = 0;
+    var q = $('sQ'); q.textContent = S.q.expr + ' = ?'; q.classList.toggle('small', S.q.expr.length > 14);
+    var bs = $('sOpts').children;
+    for (var i = 0; i < 4; i++) { bs[i].textContent = S.q.labels[i]; bs[i].className = 'opt'; }
+    $('sExplain').textContent = '';
+  }
+  function renderSprintHud() {
+    var t = Math.max(0, S.time);
+    $('sClock').querySelector('span').textContent = Math.ceil(t) + '″';
+    $('sClock').querySelector('i').style.width = Math.min(100, t / B.SPRINT.cap * 100) + '%';
+    $('sClock').classList.toggle('low', t <= 10);
+    $('sScore').textContent = S.score;
+    $('sStreak').textContent = S.streak >= 3 ? '🔥 σερί ' + S.streak : (S.streak ? 'σερί ' + S.streak : '');
+    $('mSprint').classList.toggle('glow', S.streak >= 3);
+  }
+  function sprintAnswer(i) {
+    if (!S || S.locked || paused) return;
+    var bs = $('sOpts').children;
+    if (i === S.q.correct) {
+      S.correct++; S.streak++; S.score += B.scoreFor(S.streak);
+      S.time = Math.min(B.SPRINT.cap, S.time + B.SPRINT.bonus);
+      if (S.streak >= 3) { sfx.streak(S.streak); pop('+15 🔥', bs[i]); } else { sfx.ok(); pop('+10', bs[i]); }
+      setPose('mSprint', 'cheer', S.streak >= 3);
+      nextSprintQ();
+    } else {
+      S.errors++; S.streak = 0; S.locked = true; S.adv = 2.6; sfx.bad();
+      for (var k = 0; k < 4; k++) bs[k].className = 'opt' + (k === S.q.correct ? ' ok' : (k === i ? ' no' : ' dim'));
+      $('sExplain').innerHTML = '📒 <span>' + S.q.expr + ' = <b>' + S.q.labels[S.q.correct] + '</b>. ' + S.q.explain + '</span>';
+      setPose('mSprint', 'dizzy');
+    }
+    renderSprintHud();
+  }
+  $('sExplain').onclick = function () { if (S && S.locked && mode === 'sprint') { if (S.time > 0) nextSprintQ(); } };
+  function sprintTick(dt) {
+    S.time -= dt;
+    if (S.locked) { S.adv -= dt; if (S.adv <= 0 && S.time > 0) nextSprintQ(); }
+    renderSprintHud();
+    if (S.time <= 0) endSprint();
+  }
+  function endSprint() {
+    mode = null;
+    var st = B.starsFor(S.correct, S.errors), prev = records[tier] || 0, isNew = S.score > prev && S.score > 0;
+    if (isNew) { records[tier] = S.score; save('records', records); }
+    if (st > (stars[tier] || 0)) { stars[tier] = st; save('stars', stars); }
+    $('rTitle').textContent = 'Τέλος χρόνου!'; $('rScore').textContent = S.score; $('rStars').textContent = stars3(st);
+    $('rOk').textContent = S.correct; $('rBad').textContent = S.errors; $('rBest').textContent = records[tier] || 0;
+    $('rNew').hidden = !isNew;
+    var t = B.TIERS[tier - 1];
+    $('rTier').textContent = t.emoji + ' ' + t.name + ' · έφτασες ως επίπεδο ' + B.sprintTier(tier, S.correct) +
+      (st ? '' : ' · 10 σωστές για το πρώτο αστέρι!');
+    setPose('mRes', st ? 'cheer' : 'dizzy', false, false);
+    showScreen('sResult'); (st ? sfx.win : sfx.lose)();
+  }
+
+  /* ---------- Μονομαχία ---------- */
+  var D = null;
+  var halves = [$('h0'), $('h1')];
+  function hpart(p, sel) { return halves[p].querySelector(sel); }
+  function startDuel() {
+    D = { st: B.duelNew(10), q: null, adv: 0, lastExpr: '' };
+    mode = 'duel'; showScreen('sDuel');
+    $('dEndBtns').hidden = true; $('dQuit').hidden = false; $('dMid').hidden = false;
+    for (var p = 0; p < 2; p++) {
+      hpart(p, '.hover').hidden = true;
+      var box = hpart(p, '.opts'); box.innerHTML = '';
+      for (var i = 0; i < 4; i++) (function (p, i) {
+        var b = document.createElement('button'); b.className = 'opt';
+        b.addEventListener('pointerdown', function (e) { e.preventDefault(); duelAnswer(p, i); });
+        b.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); duelAnswer(p, i); } });
+        box.appendChild(b);
+      })(p, i);
+    }
+    duelQuestion(); duelHud();
+  }
+  function duelQuestion() {
+    D.q = B.genQuestion(tier, D.lastExpr); D.lastExpr = D.q.expr; D.adv = 0;
+    for (var p = 0; p < 2; p++) {
+      var qc = hpart(p, '.qcard'); qc.textContent = D.q.expr + ' = ?'; qc.classList.toggle('small', D.q.expr.length > 14);
+      var bs = hpart(p, '.opts').children;
+      for (var i = 0; i < 4; i++) { bs[i].textContent = D.q.labels[i]; bs[i].className = 'opt'; bs[i].disabled = false; }
+      hpart(p, '.hmsg').textContent = 'Πάτα πρώτος τη σωστή!';
+    }
+  }
+  function duelHud() {
+    for (var p = 0; p < 2; p++) {
+      hpart(p, '.n').textContent = D.st.scores[p] + '/' + D.st.target;
+      hpart(p, '.bar i').style.width = (D.st.scores[p] / D.st.target * 100) + '%';
+    }
+  }
+  function duelAnswer(p, i) {
+    if (!D || mode !== 'duel' || paused) return;
+    var ok = i === D.q.correct, res = B.duelTap(D.st, p, ok);
+    if (res === 'ignored') return;
+    var bs = hpart(p, '.opts').children;
+    if (res === 'locked') {
+      sfx.bad(); bs[i].className = 'opt no';
+      for (var k = 0; k < 4; k++) bs[k].disabled = true;
+      hpart(p, '.hmsg').textContent = '❌ Λάθος! Κλειδώθηκες — περίμενε τον άλλο.';
+      hpart(1 - p, '.hmsg').textContent = 'Ο αντίπαλος έκανε λάθος — πάτα τη σωστή!';
+      return;
+    }
+    // point ή both-wrong: η ερώτηση λύθηκε
+    for (var q = 0; q < 2; q++) {
+      var b2 = hpart(q, '.opts').children;
+      for (var j = 0; j < 4; j++) { b2[j].disabled = true; b2[j].className = 'opt' + (j === D.q.correct ? ' ok' : ' dim'); }
+    }
+    var info = D.q.expr + ' = ' + D.q.labels[D.q.correct] + '. ' + D.q.explain;
+    if (res === 'point') {
+      sfx.ok();
+      hpart(p, '.hmsg').textContent = '⚡ Δικός σου ο πόντος! ' + info;
+      hpart(1 - p, '.hmsg').textContent = '🐢 Ο αντίπαλος πρόλαβε. ' + info;
+      D.adv = D.st.over ? 1.4 : 2.4;
+    } else {
+      sfx.bad();
+      for (var r = 0; r < 2; r++) hpart(r, '.hmsg').textContent = '🙈 Κανείς! ' + info;
+      D.adv = 3;
+    }
+    duelHud();
+  }
+  function duelTick(dt) {
+    if (D.adv > 0) {
+      D.adv -= dt;
+      if (D.adv <= 0) {
+        if (D.st.over) duelOver(); else { B.duelNext(D.st); duelQuestion(); }
+      }
+    }
+  }
+  function duelOver() {
+    mode = null;
+    var w = D.st.winner;
+    for (var p = 0; p < 2; p++) {
+      var h = hpart(p, '.hover'); h.hidden = false;
+      h.innerHTML = (p === w ? '<b>🏆 Κέρδισες!</b>' : '<b>Καλή προσπάθεια!</b>') +
+        '<span>' + D.st.scores[p] + ' – ' + D.st.scores[1 - p] + (p === w ? '' : ' · ρεβάνς;') + '</span>';
+    }
+    $('dQuit').hidden = true; $('dMid').hidden = true; $('dEndBtns').hidden = false;
+    sfx.win();
+  }
+
+  /* ---------- πληκτρολόγιο (desktop, σπριντ) ---------- */
+  document.addEventListener('keydown', function (e) {
+    if (mode === 'sprint' && !paused && e.key >= '1' && e.key <= '4') sprintAnswer(+e.key - 1);
+  });
+
+  window.feedbackContext = function () { return { game: 'blitz', mode: mode, tier: tier }; };
+
+  tier = load('tier', 1); if (tier < 1 || tier > 4) tier = 1;
+  setSoundUI(); setPose('mTitle', 'idle'); renderTiers();
+  if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register('sw.js').catch(function () {});
+})();
+</script>
+<script src="../feedback.js" data-fb-corner="br" defer></script>
+</body>
+</html>
